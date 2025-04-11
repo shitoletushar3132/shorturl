@@ -2,55 +2,37 @@ version: '3.8'
 
 services:
   backend:
-    build: .
+    image: shitoletushar3132/shorturl-backend
     expose:
       - "3000"
+    restart: always
+    depends_on:
+      - redis
     networks:
       - app-net
     deploy:
-      replicas: 1 # Start with 1 replica, and you can scale it up as needed
-      resources:
-        limits:
-          cpus: '0.50'
-          memory: 500M
-      placement:
-        constraints:
-          - node.role == worker # Ensure it runs on worker nodes
+      mode: replicated
+      replicas: 3
 
   redis:
     image: redis:latest
+    ports:
+      - "6379:6379"
     networks:
       - app-net
-    deploy:
-      replicas: 1
-      resources:
-        limits:
-          cpus: '0.25'
-          memory: 100M
-      placement:
-        constraints:
-          - node.role == worker
 
   nginx:
     image: nginx:latest
     ports:
-      - "3001:80"
+      - "80:80"
     volumes:
       - ./nginx.conf:/etc/nginx/nginx.conf
+      - ./ssl:/etc/nginx/ssl
     depends_on:
       - backend
     networks:
       - app-net
-    deploy:
-      replicas: 1
-      resources:
-        limits:
-          cpus: '0.25'
-          memory: 100M
-      placement:
-        constraints:
-          - node.role == worker
 
 networks:
   app-net:
-    driver: overlay
+    driver: bridge
